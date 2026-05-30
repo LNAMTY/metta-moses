@@ -97,15 +97,18 @@
 ;; Params: $id1 & $id2
 ;; Returns: True/False
 ;; (: nodeId< (-> NodeId NodeId Bool))
-;; FIX: Non-determinsitic logic if nodeId is both () or either is empty.
-(= (nodeId< (mkNodeId ()) (mkNodeId $id2)) True)
-(= (nodeId< (mkNodeId $id1) (mkNodeId ())) False)
-(= (nodeId< (mkNodeId $id1) (mkNodeId $id2)) 
-(if (== (mkNodeId $id1) (mkNodeId $id2)) False
-    (let* 
-       (
-          (($headId1 $tailId1) (decons-atom $id1))
-          (($headId2 $tailId2) (decons-atom $id2)))
-       (if (== $headId1 $headId2) 
-           (nodeId< (mkNodeId $tailId1) (mkNodeId $tailId2))
-           (< $headId1 $headId2)))))
+;; The previous three-rule form overlapped on empty inputs, e.g.
+;; (nodeId< (mkNodeId ()) (mkNodeId ())) matched all three rules.
+(= (nodeId< (mkNodeId $id1) (mkNodeId $id2))
+   (if (== $id1 ())
+       (not (== $id2 ()))               ;; () < () is False; () < non-empty is True
+       (if (== $id2 ())
+           False                        ;; non-empty < () is False
+           (let*
+              (
+                 (($headId1 $tailId1) (decons-atom $id1))
+                 (($headId2 $tailId2) (decons-atom $id2))
+              )
+              (if (== $headId1 $headId2)
+                  (nodeId< (mkNodeId $tailId1) (mkNodeId $tailId2))
+                  (< $headId1 $headId2))))))
