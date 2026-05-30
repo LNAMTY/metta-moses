@@ -20,12 +20,17 @@
 ;; )
 
 (= (findX $expr $x)
-   (if (once (is-member $x $expr))
-       True
-       (List.any (map-atom $expr $ex
-             (if (or (== (get-metatype $ex) Grounded) (== (get-metatype $ex) Symbol))
-                 (== $ex $x)
-                 (findX $ex $x))))))
+   ;; Symbol/Grounded base case: map-atom on a non-Expression produces
+   ;; no alternatives, which silently kills rowFitness when
+   ;; replaceWithTruth returns `undefined` for a missing variable.
+   (if (or (== (get-metatype $expr) Grounded) (== (get-metatype $expr) Symbol))
+       (== $expr $x)
+       (if (once (is-member $x $expr))
+           True
+           (List.any (map-atom $expr $ex
+                 (if (or (== (get-metatype $ex) Grounded) (== (get-metatype $ex) Symbol))
+                     (== $ex $x)
+                     (findX $ex $x)))))))
 
  ;; Replaces variables in an expression with their corresponding truth values from the space.
  ;; If a variable is not found, it is replaced with undefined.
